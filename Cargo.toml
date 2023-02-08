@@ -14,7 +14,6 @@ keywords = ["graph"]
 rustdoc-args = [ "--html-in-header", "katex.html" ]
 
 [dependencies]
-hashbrown = "0.13.2"
 petgraph = "0.6.2"
 
 [dev-dependencies]

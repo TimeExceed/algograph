@@ -32,7 +32,8 @@ fn petgraph_backed(c: &mut Criterion) {
 }
 
 fn cases<G>(c: &mut Criterion, prefix: &str)
-where G: GrowableGraph + QueryableGraph + EdgeShrinkableGraph + VertexShrinkableGraph + Clone
+where
+    G: GrowableGraph + QueryableGraph + EdgeShrinkableGraph + VertexShrinkableGraph + Clone,
 {
     let vertex_size = *VERTEX_SIZE;
     println!("VERTEX_SIZE: {}", vertex_size);
@@ -61,7 +62,9 @@ where G: GrowableGraph + QueryableGraph + EdgeShrinkableGraph + VertexShrinkable
     c.bench_function(&(prefix.to_string() + "/iter_vertices"), |b| {
         b.iter(|| iter_vertices(&g))
     });
-    c.bench_function(&(prefix.to_string() + "/iter_edges"), |b| b.iter(|| iter_edges(&g)));
+    c.bench_function(&(prefix.to_string() + "/iter_edges"), |b| {
+        b.iter(|| iter_edges(&g))
+    });
     c.bench_function(&(prefix.to_string() + "/contains_vertex"), |b| {
         b.iter(|| contains_vertex(&g, &vertices))
     });
@@ -140,7 +143,8 @@ where
 }
 
 fn remove_edges<G>(g: &mut G, edges: &[EdgeId])
-where G: EdgeShrinkableGraph
+where
+    G: EdgeShrinkableGraph,
 {
     for e in edges {
         g.remove_edge(e);
@@ -148,7 +152,8 @@ where G: EdgeShrinkableGraph
 }
 
 fn remove_vertices<G>(g: &mut G, vertices: &[VertexId])
-where G: VertexShrinkableGraph
+where
+    G: VertexShrinkableGraph,
 {
     for v in vertices {
         let _ = black_box(g.remove_vertex(v));

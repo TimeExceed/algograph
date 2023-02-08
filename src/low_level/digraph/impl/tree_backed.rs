@@ -1,13 +1,18 @@
 use crate::low_level::{digraph::*, *};
-use std::collections::BTreeSet;
-use hashbrown::{HashSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 
+/// A tree-backed directed graph.
+///
+/// For any digraph operations, this is probably not the fastest implementation.
+/// But it is balanced.
+/// For all point queries, it is $O(\log n)$; for all iterations, it is amortized $O(1)$.
+/// Besides, iterations are always in the order of vertex/edge insertion order.
 #[derive(Clone)]
 pub struct TreeBackedGraph {
     vid_factory: VertexIdFactory,
     eid_factory: EdgeIdFactory,
-    vertices: HashSet<VertexId>,
-    edges: HashMap<EdgeId, (VertexId, VertexId)>,
+    vertices: BTreeSet<VertexId>,
+    edges: BTreeMap<EdgeId, (VertexId, VertexId)>,
     in_edges: BTreeSet<(VertexId, VertexId, EdgeId)>,
     out_edges: BTreeSet<(VertexId, VertexId, EdgeId)>,
 }
@@ -17,8 +22,8 @@ impl GrowableGraph for TreeBackedGraph {
         Self {
             vid_factory: VertexIdFactory::new(),
             eid_factory: EdgeIdFactory::new(),
-            vertices: HashSet::new(),
-            edges: HashMap::new(),
+            vertices: BTreeSet::new(),
+            edges: BTreeMap::new(),
             in_edges: BTreeSet::new(),
             out_edges: BTreeSet::new(),
         }
@@ -81,7 +86,7 @@ impl VertexShrinkableGraph for TreeBackedGraph {
                 source: *src,
                 sink: *snk,
             });
-        let res: HashSet<_> = ins.chain(outs).collect();
+        let res: BTreeSet<_> = ins.chain(outs).collect();
         for x in res.iter() {
             self.remove_edge(&x.id);
         }
@@ -148,13 +153,19 @@ impl QueryableGraph for TreeBackedGraph {
         Box::new(it)
     }
 
-    fn adjacent<'a, 'b>(&'a self, source: &'b VertexId, sink: &'b VertexId) -> Box<dyn Iterator<Item = Edge> + 'a> {
+    fn adjacent<'a, 'b>(
+        &'a self,
+        source: &'b VertexId,
+        sink: &'b VertexId,
+    ) -> Box<dyn Iterator<Item = Edge> + 'a> {
         let source = *source;
         let sink = *sink;
         let start = (source, sink, EdgeId::MIN);
         let end = (source, sink, EdgeId::MAX);
-        let it = self.out_edges.range(start..=end)
-            .map(move |(_, _, eid)| Edge{
+        let it = self
+            .out_edges
+            .range(start..=end)
+            .map(move |(_, _, eid)| Edge {
                 id: *eid,
                 source,
                 sink,
