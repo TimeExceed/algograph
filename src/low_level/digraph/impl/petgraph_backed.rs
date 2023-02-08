@@ -135,8 +135,7 @@ impl QueryableGraph for PetgraphBackedGraph {
 
     fn adjacent(&self, source: &VertexId, sink: &VertexId) -> Box<dyn Iterator<Item = Edge> + '_> {
         let sink = *sink;
-        let it = self.out_edges(source)
-            .filter(move |e| e.sink == sink);
+        let it = self.out_edges(source).filter(move |e| e.sink == sink);
         Box::new(it)
     }
 }
