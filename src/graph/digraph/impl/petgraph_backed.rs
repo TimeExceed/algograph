@@ -1,4 +1,4 @@
-use crate::low_level::{digraph::*, *};
+use crate::graph::{digraph::*, *};
 use petgraph::{
     graph::{EdgeIndex, NodeIndex},
     stable_graph::StableDiGraph,

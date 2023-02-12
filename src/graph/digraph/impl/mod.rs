@@ -5,7 +5,7 @@ pub use self::tree_backed::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::low_level::{digraph::*, *};
+    use crate::graph::{digraph::*, *};
     use bimap::BiHashMap;
     use rs_quickcheck_util::*;
     use std::collections::BTreeSet;

@@ -1,4 +1,4 @@
-use crate::low_level::{digraph::*, *};
+use crate::graph::{digraph::*, *};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// A tree-backed directed graph.

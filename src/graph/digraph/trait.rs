@@ -1,4 +1,4 @@
-use crate::low_level::*;
+use crate::graph::*;
 
 pub trait GrowableGraph {
     fn new() -> Self;

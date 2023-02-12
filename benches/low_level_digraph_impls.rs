@@ -1,4 +1,4 @@
-use algograph::low_level::{
+use algograph::graph::{
     digraph::{
         r#impl::{PetgraphBackedGraph, TreeBackedGraph},
         *,
