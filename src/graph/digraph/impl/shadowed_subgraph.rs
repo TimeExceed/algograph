@@ -156,7 +156,9 @@ mod tests {
             Op::RemoveEdge(_) => false,
         });
         let add_ops = Ops { ops: add };
-        let remove_ops = Ops { ops: remove.clone() };
+        let remove_ops = Ops {
+            ops: remove.clone(),
+        };
         let base: OpsFormedGraph<TreeBackedGraph> = (&add_ops).into();
         let oracle = {
             let mut oracle = base.clone();
@@ -164,7 +166,7 @@ mod tests {
             oracle
         };
         let trial = {
-            let mut trial = OpsFormedGraph{
+            let mut trial = OpsFormedGraph {
                 graph: ShadowedSubgraph::new(&base.graph),
                 vmap: base.vmap.clone(),
                 emap: base.emap.clone(),
@@ -183,7 +185,7 @@ mod tests {
                             trial.graph.remove_edge(my_eid);
                         }
                     }
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 }
             }
             trial

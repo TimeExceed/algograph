@@ -4,6 +4,8 @@ mod tree_backed;
 pub use self::tree_backed::*;
 mod shadowed_subgraph;
 pub use self::shadowed_subgraph::*;
+mod selected_subgraph;
+pub use self::selected_subgraph::*;
 
 #[cfg(test)]
 mod tests {
