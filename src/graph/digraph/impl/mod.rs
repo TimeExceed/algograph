@@ -2,6 +2,10 @@ mod petgraph_backed;
 pub use self::petgraph_backed::*;
 mod tree_backed;
 pub use self::tree_backed::*;
+mod shadowed_subgraph;
+pub use self::shadowed_subgraph::*;
+mod selected_subgraph;
+pub use self::selected_subgraph::*;
 
 #[cfg(test)]
 mod tests {
@@ -20,7 +24,7 @@ mod tests {
 
     #[derive(Clone)]
     pub(crate) struct Ops {
-        ops: Vec<Op>,
+        pub(crate) ops: Vec<Op>,
     }
 
     impl std::fmt::Debug for Ops {
@@ -116,10 +120,56 @@ mod tests {
         }
     }
 
+    #[derive(Clone)]
     pub(crate) struct OpsFormedGraph<G> {
         pub(crate) graph: G,
         pub(crate) vmap: BiHashMap<VertexId, VertexId>,
         pub(crate) emap: BiHashMap<EdgeId, EdgeId>,
+    }
+
+    impl<G> OpsFormedGraph<G>
+    where
+        G: GrowableGraph + EdgeShrinkableGraph + VertexShrinkableGraph,
+    {
+        pub(crate) fn new() -> Self {
+            Self {
+                graph: G::new(),
+                vmap: BiHashMap::new(),
+                emap: BiHashMap::new(),
+            }
+        }
+
+        pub(crate) fn apply(&mut self, ops: &Ops) {
+            for op in ops.iter() {
+                match op {
+                    Op::AddVertex(vid) => {
+                        let my_vid = self.graph.add_vertex();
+                        self.vmap.insert(my_vid, *vid);
+                    }
+                    Op::RemoveVertex(vid) => {
+                        if let Some(my_vid) = self.vmap.get_by_right(vid) {
+                            for e in self.graph.remove_vertex(my_vid) {
+                                self.emap.remove_by_left(&e.id);
+                            }
+                        }
+                    }
+                    Op::AddEdge((source, sink, eid)) => {
+                        match (self.vmap.get_by_right(source), self.vmap.get_by_right(sink)) {
+                            (Some(my_src), Some(my_sink)) => {
+                                let my_eid = self.graph.add_edge(*my_src, *my_sink);
+                                self.emap.insert(my_eid, *eid);
+                            }
+                            _ => {}
+                        }
+                    }
+                    Op::RemoveEdge(eid) => {
+                        if let Some(my_eid) = self.emap.get_by_right(eid) {
+                            self.graph.remove_edge(my_eid);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     impl<G> std::fmt::Debug for OpsFormedGraph<G>
@@ -146,43 +196,9 @@ mod tests {
         G: GrowableGraph + EdgeShrinkableGraph + VertexShrinkableGraph,
     {
         fn from(ops: &Ops) -> Self {
-            let mut vmap = BiHashMap::new();
-            let mut emap = BiHashMap::new();
-            let mut res = G::new();
-            for op in ops.iter() {
-                match op {
-                    Op::AddVertex(vid) => {
-                        let my_vid = res.add_vertex();
-                        vmap.insert(my_vid, *vid);
-                    }
-                    Op::RemoveVertex(vid) => {
-                        if let Some(my_vid) = vmap.get_by_right(vid) {
-                            for e in res.remove_vertex(my_vid) {
-                                emap.remove_by_left(&e.id);
-                            }
-                        }
-                    }
-                    Op::AddEdge((source, sink, eid)) => {
-                        match (vmap.get_by_right(source), vmap.get_by_right(sink)) {
-                            (Some(my_src), Some(my_sink)) => {
-                                let my_eid = res.add_edge(*my_src, *my_sink);
-                                emap.insert(my_eid, *eid);
-                            }
-                            _ => {}
-                        }
-                    }
-                    Op::RemoveEdge(eid) => {
-                        if let Some(my_eid) = emap.get_by_right(eid) {
-                            res.remove_edge(my_eid);
-                        }
-                    }
-                }
-            }
-            Self {
-                graph: res,
-                vmap,
-                emap,
-            }
+            let mut res = Self::new();
+            res.apply(ops);
+            res
         }
     }
 
@@ -210,30 +226,30 @@ mod tests {
                 return false;
             }
             for e in self.graph.edges() {
-                if !self.edge_in_ohter(other, e) {
+                if !self.edge_in_other(other, e) {
                     return false;
                 }
             }
             for vid in self.graph.vertices() {
                 for e in self.graph.in_edges(&vid) {
-                    if !self.edge_in_ohter(other, e) {
+                    if !self.edge_in_other(other, e) {
                         return false;
                     }
                 }
                 for e in self.graph.out_edges(&vid) {
-                    if !self.edge_in_ohter(other, e) {
+                    if !self.edge_in_other(other, e) {
                         return false;
                     }
                 }
             }
             for vid in other.graph.vertices() {
                 for e in other.graph.in_edges(&vid) {
-                    if !other.edge_in_ohter(self, e) {
+                    if !other.edge_in_other(self, e) {
                         return false;
                     }
                 }
                 for e in other.graph.out_edges(&vid) {
-                    if !other.edge_in_ohter(self, e) {
+                    if !other.edge_in_other(self, e) {
                         return false;
                     }
                 }
@@ -246,7 +262,7 @@ mod tests {
     where
         G1: QueryableGraph,
     {
-        fn edge_in_ohter<G2>(&self, other: &OpsFormedGraph<G2>, e: Edge) -> bool
+        fn edge_in_other<G2>(&self, other: &OpsFormedGraph<G2>, e: Edge) -> bool
         where
             G2: QueryableGraph,
         {
