@@ -17,6 +17,20 @@ pub struct TreeBackedGraph {
     out_edges: BTreeSet<(VertexId, VertexId, EdgeId)>,
 }
 
+impl std::fmt::Debug for TreeBackedGraph {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "TreeBackedGraph {{")?;
+        for v in self.vertices.iter() {
+            writeln!(f, "{:?}:", v)?;
+            for e in self.out_edges(v) {
+                writeln!(f, "  -> {:?} by {:?}", e.sink, e.id)?;
+            }
+        }
+        writeln!(f, "}}")?;
+        Ok(())
+    }
+}
+
 impl GrowableGraph for TreeBackedGraph {
     fn new() -> Self {
         Self {
@@ -145,7 +159,7 @@ impl QueryableGraph for TreeBackedGraph {
     fn out_edges(&self, v: &VertexId) -> Box<dyn Iterator<Item = Edge> + '_> {
         let start = (*v, VertexId::MIN, EdgeId::MIN);
         let end = (v.next(), VertexId::MIN, EdgeId::MIN);
-        let it = self.out_edges.range(start..end).map(|(snk, src, e)| Edge {
+        let it = self.out_edges.range(start..end).map(|(src, snk, e)| Edge {
             id: *e,
             source: *src,
             sink: *snk,
