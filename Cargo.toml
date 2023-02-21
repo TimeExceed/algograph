@@ -15,6 +15,7 @@ rustdoc-args = [ "--html-in-header", "katex.html" ]
 
 [dependencies]
 ahash = "0.8.3"
+keyed_priority_queue = "0.4.1"
 petgraph = "0.6.2"
 
 [dev-dependencies]
