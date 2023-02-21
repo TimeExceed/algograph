@@ -1,7 +1,7 @@
 use super::VertexId;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
-pub struct EdgeId(usize);
+pub struct EdgeId(pub usize);
 
 #[derive(Clone)]
 pub struct EdgeIdFactory(usize);

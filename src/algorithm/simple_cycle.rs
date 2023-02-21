@@ -57,7 +57,8 @@ where
                 }
                 if let Some(vert_idx) = self.vertex_backtrack.get(&next_edge.sink) {
                     // found a loop
-                    let mut res: Vec<EdgeId> = (&self.edge_stack[*vert_idx..]).iter().copied().collect();
+                    let mut res: Vec<EdgeId> =
+                        (&self.edge_stack[*vert_idx..]).iter().copied().collect();
                     res.push(next_edge.id);
                     self.graph.remove_edge(&next_edge.id);
                     return Some(Box::new(res.into_iter()));

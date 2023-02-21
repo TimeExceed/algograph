@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
-pub struct VertexId(usize);
+pub struct VertexId(pub usize);
 
 #[derive(Clone)]
 pub struct VertexIdFactory(usize);
