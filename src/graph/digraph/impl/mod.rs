@@ -8,6 +8,9 @@ mod selected_subgraph;
 pub use self::selected_subgraph::*;
 
 #[cfg(test)]
+pub(crate) use self::tests::*;
+
+#[cfg(test)]
 mod tests {
     use crate::graph::{digraph::*, *};
     use bimap::BiHashMap;
