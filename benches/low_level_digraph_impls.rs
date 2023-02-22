@@ -1,10 +1,4 @@
-use algograph::graph::{
-    digraph::{
-        r#impl::{PetgraphBackedGraph, TreeBackedGraph},
-        *,
-    },
-    *,
-};
+use algograph::graph::{directed::*, *};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::Rng;
 use static_init::dynamic;
@@ -128,7 +122,7 @@ fn iter_vertices<G>(g: &G)
 where
     G: QueryableGraph,
 {
-    for x in g.vertices() {
+    for x in g.iter_vertices() {
         black_box(x.to_raw());
     }
 }
@@ -137,7 +131,7 @@ fn iter_edges<G>(g: &G)
 where
     G: QueryableGraph,
 {
-    for x in g.edges() {
+    for x in g.iter_edges() {
         black_box(x.id.to_raw());
     }
 }

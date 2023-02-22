@@ -1,7 +1,4 @@
-use crate::graph::{
-    digraph::{r#impl::ShadowedSubgraph, *},
-    *,
-};
+use crate::graph::*;
 use ahash::RandomState;
 use keyed_priority_queue::KeyedPriorityQueue;
 use std::cmp::Reverse;
@@ -62,7 +59,7 @@ where
                 RandomState::new(),
             ),
         };
-        for v in graph.vertices() {
+        for v in graph.iter_vertices() {
             let in_degree = graph.in_edges(&v).count();
             res.degree_queue.push(v, Reverse(in_degree));
         }
@@ -74,12 +71,12 @@ where
 mod tests {
     use super::super::SimpleCycles;
     use super::*;
-    use crate::graph::digraph::r#impl::*;
+    use crate::graph::directed::*;
     use quickcheck_macros::quickcheck;
 
     #[quickcheck]
     fn toposort(ops: Ops) {
-        let graph_from_ops: OpsFormedGraph<TreeBackedGraph> = (&ops).into();
+        let graph_from_ops: MappedGraph<TreeBackedGraph> = (&ops).into();
         let mut graph = graph_from_ops.graph;
         loop {
             let to_remove: Vec<_> = graph
@@ -90,7 +87,7 @@ mod tests {
                 break;
             }
             for e in to_remove.into_iter() {
-                graph.remove_edge(&e);
+                graph.remove_edge(&e.id);
             }
         }
         let mut cloned_graph = graph.clone();
