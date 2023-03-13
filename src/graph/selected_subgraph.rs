@@ -1,4 +1,4 @@
-use crate::graph::{digraph::*, Edge, EdgeId, VertexId};
+use crate::graph::*;
 use ahash::RandomState;
 use std::collections::HashSet;
 
@@ -6,6 +6,13 @@ pub struct SelectedSubgraph<'a, G> {
     lower_graph: &'a G,
     selected_vertices: HashSet<VertexId, RandomState>,
     selected_edges: HashSet<EdgeId, RandomState>,
+}
+
+impl<'a, G> DirectedOrNot for SelectedSubgraph<'a, G>
+where
+    G: DirectedOrNot,
+{
+    const DIRECTED_OR_NOT: bool = G::DIRECTED_OR_NOT;
 }
 
 impl<'a, G> SelectedSubgraph<'a, G>
@@ -17,12 +24,13 @@ where
         EI: Iterator<Item = EdgeId>,
         VI: Iterator<Item = VertexId>,
     {
-        let selected_edges: HashSet<EdgeId, RandomState> =
-            edges.filter(|e| lower_graph.edge(e).is_some()).collect();
+        let selected_edges: HashSet<EdgeId, RandomState> = edges
+            .filter(|e| lower_graph.find_edge(e).is_some())
+            .collect();
         let selected_vertices = selected_edges
             .iter()
             .map(|e| {
-                let e = lower_graph.edge(e).unwrap();
+                let e = lower_graph.find_edge(e).unwrap();
                 [e.source, e.sink]
             })
             .flatten()
@@ -44,7 +52,7 @@ where
         self.selected_vertices.len()
     }
 
-    fn vertices(&self) -> Box<dyn Iterator<Item = VertexId> + '_> {
+    fn iter_vertices(&self) -> Box<dyn Iterator<Item = VertexId> + '_> {
         let it = self.selected_vertices.iter().copied();
         Box::new(it)
     }
@@ -53,14 +61,14 @@ where
         self.selected_vertices.contains(v)
     }
 
-    fn adjacent(
+    fn edges_connecting(
         &self,
         source: &VertexId,
         sink: &VertexId,
     ) -> Box<dyn Iterator<Item = crate::graph::Edge> + '_> {
         let it = self
             .lower_graph
-            .adjacent(source, sink)
+            .edges_connecting(source, sink)
             .filter(|e| self.selected_edges.contains(&e.id));
         Box::new(it)
     }
@@ -69,11 +77,11 @@ where
         self.selected_edges.len()
     }
 
-    fn edges(&self) -> Box<dyn Iterator<Item = crate::graph::Edge> + '_> {
+    fn iter_edges(&self) -> Box<dyn Iterator<Item = crate::graph::Edge> + '_> {
         let it = self
             .selected_edges
             .iter()
-            .map(|e| self.lower_graph.edge(e).unwrap());
+            .map(|e| self.lower_graph.find_edge(e).unwrap());
         Box::new(it)
     }
 
@@ -81,11 +89,11 @@ where
         self.selected_edges.contains(e)
     }
 
-    fn edge(&self, e: &EdgeId) -> Option<crate::graph::Edge> {
+    fn find_edge(&self, e: &EdgeId) -> Option<crate::graph::Edge> {
         if !self.selected_edges.contains(e) {
             return None;
         }
-        self.lower_graph.edge(e)
+        self.lower_graph.find_edge(e)
     }
 
     fn in_edges(&self, v: &VertexId) -> Box<dyn Iterator<Item = crate::graph::Edge> + '_> {
@@ -111,7 +119,7 @@ where
 {
     fn remove_edge(&mut self, edge: &EdgeId) -> Option<crate::graph::Edge> {
         if self.selected_edges.remove(edge) {
-            self.lower_graph.edge(edge)
+            self.lower_graph.find_edge(edge)
         } else {
             None
         }
@@ -146,7 +154,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::graph::digraph::r#impl::{tests::*, TreeBackedGraph};
+    use crate::graph::directed::*;
     use quickcheck_macros::quickcheck;
 
     #[quickcheck]
@@ -161,18 +169,18 @@ mod tests {
         let remove_ops = Ops {
             ops: remove.clone(),
         };
-        let base: OpsFormedGraph<TreeBackedGraph> = (&add_ops).into();
+        let base: MappedGraph<TreeBackedGraph> = (&add_ops).into();
         let oracle = {
             let mut oracle = base.clone();
             oracle.apply(&remove_ops);
             oracle
         };
         let trial = {
-            let mut trial = OpsFormedGraph {
+            let mut trial = MappedGraph {
                 graph: SelectedSubgraph::new(
                     &base.graph,
-                    base.graph.edges().map(|e| e.id),
-                    base.graph.vertices(),
+                    base.graph.iter_edges().map(|e| e.id),
+                    base.graph.iter_vertices(),
                 ),
                 vmap: base.vmap.clone(),
                 emap: base.emap.clone(),

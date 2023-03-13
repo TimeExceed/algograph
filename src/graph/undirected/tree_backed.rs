@@ -1,4 +1,4 @@
-use crate::graph::{digraph::*, *};
+use crate::graph::*;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// A tree-backed directed graph.
@@ -13,8 +13,11 @@ pub struct TreeBackedGraph {
     eid_factory: EdgeIdFactory,
     vertices: BTreeSet<VertexId>,
     edges: BTreeMap<EdgeId, (VertexId, VertexId)>,
-    in_edges: BTreeSet<(VertexId, VertexId, EdgeId)>,
-    out_edges: BTreeSet<(VertexId, VertexId, EdgeId)>,
+    adjacent_edges: BTreeSet<(VertexId, VertexId, EdgeId)>,
+}
+
+impl DirectedOrNot for TreeBackedGraph {
+    const DIRECTED_OR_NOT: bool = false;
 }
 
 impl std::fmt::Debug for TreeBackedGraph {
@@ -38,8 +41,7 @@ impl GrowableGraph for TreeBackedGraph {
             eid_factory: EdgeIdFactory::new(),
             vertices: BTreeSet::new(),
             edges: BTreeMap::new(),
-            in_edges: BTreeSet::new(),
-            out_edges: BTreeSet::new(),
+            adjacent_edges: BTreeSet::new(),
         }
     }
 
@@ -54,8 +56,8 @@ impl GrowableGraph for TreeBackedGraph {
         debug_assert!(self.vertices.contains(&sink));
         let eid = self.eid_factory.one_more();
         self.edges.insert(eid, (source, sink));
-        self.in_edges.insert((sink, source, eid));
-        self.out_edges.insert((source, sink, eid));
+        self.adjacent_edges.insert((sink, source, eid));
+        self.adjacent_edges.insert((source, sink, eid));
         eid
     }
 }
@@ -65,8 +67,8 @@ impl EdgeShrinkableGraph for TreeBackedGraph {
         match self.edges.remove(edge) {
             None => return None,
             Some((src, snk)) => {
-                self.in_edges.remove(&(snk, src, *edge));
-                self.out_edges.remove(&(src, snk, *edge));
+                self.adjacent_edges.remove(&(snk, src, *edge));
+                self.adjacent_edges.remove(&(src, snk, *edge));
                 Some(Edge {
                     id: *edge,
                     source: src,
@@ -84,23 +86,15 @@ impl VertexShrinkableGraph for TreeBackedGraph {
         }
         let start = (*vertex, VertexId::MIN, EdgeId::MIN);
         let end = (vertex.next(), VertexId::MIN, EdgeId::MIN);
-        let ins = self
-            .in_edges
+        let res: BTreeSet<_> = self
+            .adjacent_edges
             .range(start..end)
             .map(|(snk, src, edge)| Edge {
                 id: *edge,
                 source: *src,
                 sink: *snk,
-            });
-        let outs = self
-            .out_edges
-            .range(start..end)
-            .map(|(src, snk, edge)| Edge {
-                id: *edge,
-                source: *src,
-                sink: *snk,
-            });
-        let res: BTreeSet<_> = ins.chain(outs).collect();
+            })
+            .collect();
         for x in res.iter() {
             self.remove_edge(&x.id);
         }
@@ -113,7 +107,7 @@ impl QueryableGraph for TreeBackedGraph {
         self.vertices.len()
     }
 
-    fn vertices(&self) -> Box<dyn Iterator<Item = VertexId> + '_> {
+    fn iter_vertices(&self) -> Box<dyn Iterator<Item = VertexId> + '_> {
         Box::new(self.vertices.iter().copied())
     }
 
@@ -125,7 +119,7 @@ impl QueryableGraph for TreeBackedGraph {
         self.edges.len()
     }
 
-    fn edges(&self) -> Box<dyn Iterator<Item = Edge> + '_> {
+    fn iter_edges(&self) -> Box<dyn Iterator<Item = Edge> + '_> {
         Box::new(self.edges.iter().map(|(e, (src, snk))| Edge {
             id: *e,
             source: *src,
@@ -137,7 +131,7 @@ impl QueryableGraph for TreeBackedGraph {
         self.edges.contains_key(e)
     }
 
-    fn edge(&self, e: &EdgeId) -> Option<Edge> {
+    fn find_edge(&self, e: &EdgeId) -> Option<Edge> {
         self.edges.get(e).map(|(src, snk)| Edge {
             id: *e,
             source: *src,
@@ -148,26 +142,27 @@ impl QueryableGraph for TreeBackedGraph {
     fn in_edges(&self, v: &VertexId) -> Box<dyn Iterator<Item = Edge> + '_> {
         let start = (*v, VertexId::MIN, EdgeId::MIN);
         let end = (v.next(), VertexId::MIN, EdgeId::MIN);
-        let it = self.in_edges.range(start..end).map(|(snk, src, e)| Edge {
-            id: *e,
-            source: *src,
-            sink: *snk,
-        });
+        let it = self
+            .adjacent_edges
+            .range(start..end)
+            .map(|(snk, src, e)| Edge {
+                id: *e,
+                source: *src,
+                sink: *snk,
+            });
         Box::new(it)
     }
 
     fn out_edges(&self, v: &VertexId) -> Box<dyn Iterator<Item = Edge> + '_> {
-        let start = (*v, VertexId::MIN, EdgeId::MIN);
-        let end = (v.next(), VertexId::MIN, EdgeId::MIN);
-        let it = self.out_edges.range(start..end).map(|(src, snk, e)| Edge {
-            id: *e,
-            source: *src,
-            sink: *snk,
+        let it = self.in_edges(v).map(|e| Edge {
+            id: e.id,
+            source: e.sink,
+            sink: e.source,
         });
         Box::new(it)
     }
 
-    fn adjacent<'a, 'b>(
+    fn edges_connecting<'a, 'b>(
         &'a self,
         source: &'b VertexId,
         sink: &'b VertexId,
@@ -177,7 +172,7 @@ impl QueryableGraph for TreeBackedGraph {
         let start = (source, sink, EdgeId::MIN);
         let end = (source, sink, EdgeId::MAX);
         let it = self
-            .out_edges
+            .adjacent_edges
             .range(start..=end)
             .map(move |(_, _, eid)| Edge {
                 id: *eid,
@@ -190,19 +185,14 @@ impl QueryableGraph for TreeBackedGraph {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        super::{
-            petgraph_backed::PetgraphBackedGraph,
-            tests::{Ops, OpsFormedGraph},
-        },
-        *,
-    };
+    use crate::graph::*;
     use quickcheck_macros::*;
 
     #[quickcheck]
-    fn tree_backed_gen(ops: Ops) {
-        let oracle = OpsFormedGraph::<PetgraphBackedGraph>::from(&ops);
-        let trial = OpsFormedGraph::<TreeBackedGraph>::from(&ops);
+    fn tree_backed_gen(ops: directed::Ops) {
+        let dig: MappedGraph<directed::PetgraphBackedGraph> = (&ops).into();
+        let oracle: MappedGraph<undirected::PetgraphBackedGraph> = dig.transform();
+        let trial: MappedGraph<undirected::TreeBackedGraph> = dig.transform();
         assert_eq!(oracle, trial);
     }
 }

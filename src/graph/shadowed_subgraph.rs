@@ -1,4 +1,4 @@
-use crate::graph::{digraph::*, *};
+use crate::graph::*;
 use ahash::RandomState;
 use std::collections::HashSet;
 
@@ -6,6 +6,13 @@ pub struct ShadowedSubgraph<'a, G> {
     lower_graph: &'a G,
     shadowed_vertices: HashSet<VertexId, RandomState>,
     shadowed_edges: HashSet<EdgeId, RandomState>,
+}
+
+impl<'a, G> DirectedOrNot for ShadowedSubgraph<'a, G>
+where
+    G: DirectedOrNot,
+{
+    const DIRECTED_OR_NOT: bool = G::DIRECTED_OR_NOT;
 }
 
 impl<'a, G> ShadowedSubgraph<'a, G> {
@@ -26,7 +33,7 @@ where
         if self.shadowed_edges.contains(edge) {
             return None;
         }
-        if let Some(e) = self.lower_graph.edge(edge) {
+        if let Some(e) = self.lower_graph.find_edge(edge) {
             self.shadowed_edges.insert(e.id);
             Some(e)
         } else {
@@ -69,10 +76,10 @@ where
         self.lower_graph.vertex_size() - self.shadowed_vertices.len()
     }
 
-    fn vertices(&self) -> Box<dyn Iterator<Item = VertexId> + '_> {
+    fn iter_vertices(&self) -> Box<dyn Iterator<Item = VertexId> + '_> {
         let it = self
             .lower_graph
-            .vertices()
+            .iter_vertices()
             .filter(|v| !self.shadowed_vertices.contains(v));
         Box::new(it)
     }
@@ -81,7 +88,11 @@ where
         !self.shadowed_vertices.contains(v) && self.lower_graph.contains_vertex(v)
     }
 
-    fn adjacent(&self, source: &VertexId, sink: &VertexId) -> Box<dyn Iterator<Item = Edge> + '_> {
+    fn edges_connecting(
+        &self,
+        source: &VertexId,
+        sink: &VertexId,
+    ) -> Box<dyn Iterator<Item = Edge> + '_> {
         if self.shadowed_vertices.contains(source) {
             return Box::new(std::iter::empty());
         }
@@ -90,7 +101,7 @@ where
         }
         let it = self
             .lower_graph
-            .adjacent(source, sink)
+            .edges_connecting(source, sink)
             .filter(|e| !self.shadowed_edges.contains(&e.id));
         Box::new(it)
     }
@@ -99,10 +110,10 @@ where
         self.lower_graph.edge_size() - self.shadowed_edges.len()
     }
 
-    fn edges(&self) -> Box<dyn Iterator<Item = Edge> + '_> {
+    fn iter_edges(&self) -> Box<dyn Iterator<Item = Edge> + '_> {
         let it = self
             .lower_graph
-            .edges()
+            .iter_edges()
             .filter(|e| !self.shadowed_edges.contains(&e.id));
         Box::new(it)
     }
@@ -111,11 +122,11 @@ where
         !self.shadowed_edges.contains(e) && self.lower_graph.contains_edge(e)
     }
 
-    fn edge(&self, e: &EdgeId) -> Option<Edge> {
+    fn find_edge(&self, e: &EdgeId) -> Option<Edge> {
         if self.shadowed_edges.contains(e) {
             return None;
         }
-        self.lower_graph.edge(e)
+        self.lower_graph.find_edge(e)
     }
 
     fn in_edges(&self, v: &VertexId) -> Box<dyn Iterator<Item = Edge> + '_> {
@@ -144,7 +155,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::graph::digraph::r#impl::{tests::*, TreeBackedGraph};
+    use crate::graph::directed::*;
     use quickcheck_macros::quickcheck;
 
     #[quickcheck]
@@ -159,14 +170,14 @@ mod tests {
         let remove_ops = Ops {
             ops: remove.clone(),
         };
-        let base: OpsFormedGraph<TreeBackedGraph> = (&add_ops).into();
+        let base: MappedGraph<TreeBackedGraph> = (&add_ops).into();
         let oracle = {
             let mut oracle = base.clone();
             oracle.apply(&remove_ops);
             oracle
         };
         let trial = {
-            let mut trial = OpsFormedGraph {
+            let mut trial = MappedGraph {
                 graph: ShadowedSubgraph::new(&base.graph),
                 vmap: base.vmap.clone(),
                 emap: base.emap.clone(),
