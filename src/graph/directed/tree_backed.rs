@@ -199,7 +199,7 @@ mod tests {
 
     #[quickcheck]
     fn tree_backed_gen(ops: Ops) {
-        let oracle: MappedGraph<PetgraphBackedGraph> = (&ops).into();
+        let oracle: MappedGraph<AdjacentListGraph> = (&ops).into();
         let trial: MappedGraph<TreeBackedGraph> = (&ops).into();
         assert_eq!(oracle, trial);
     }

@@ -190,8 +190,8 @@ mod tests {
 
     #[quickcheck]
     fn tree_backed_gen(ops: directed::Ops) {
-        let dig: MappedGraph<directed::PetgraphBackedGraph> = (&ops).into();
-        let oracle: MappedGraph<undirected::PetgraphBackedGraph> = dig.transform();
+        let dig: MappedGraph<directed::AdjacentListGraph> = (&ops).into();
+        let oracle: MappedGraph<undirected::AdjacentListGraph> = dig.transform();
         let trial: MappedGraph<undirected::TreeBackedGraph> = dig.transform();
         assert_eq!(oracle, trial);
     }
