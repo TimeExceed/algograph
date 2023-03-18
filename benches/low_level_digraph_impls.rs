@@ -14,15 +14,15 @@ static EDGE_SIZE: usize = std::env::var("EDGE_SIZE")
     .parse()
     .unwrap();
 
-criterion_group!(benches, tree_backed, petgraph_backed);
+criterion_group!(benches, tree_backed, adjacent_list);
 criterion_main!(benches);
 
 fn tree_backed(c: &mut Criterion) {
     cases::<TreeBackedGraph>(c, "tree_backed");
 }
 
-fn petgraph_backed(c: &mut Criterion) {
-    cases::<PetgraphBackedGraph>(c, "petgraph_backed");
+fn adjacent_list(c: &mut Criterion) {
+    cases::<AdjacentListGraph>(c, "adjacent_list");
 }
 
 fn cases<G>(c: &mut Criterion, prefix: &str)

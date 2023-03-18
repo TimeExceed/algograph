@@ -7,13 +7,13 @@ use petgraph::{
 use std::collections::BTreeSet;
 
 #[derive(Clone)]
-pub struct PetgraphBackedGraph(StableUnGraph<(), (VertexId, VertexId), usize>);
+pub struct AdjacentListGraph(StableUnGraph<(), (VertexId, VertexId), usize>);
 
-impl DirectedOrNot for PetgraphBackedGraph {
+impl DirectedOrNot for AdjacentListGraph {
     const DIRECTED_OR_NOT: bool = false;
 }
 
-impl GrowableGraph for PetgraphBackedGraph {
+impl GrowableGraph for AdjacentListGraph {
     fn new() -> Self {
         Self(StableUnGraph::<(), (VertexId, VertexId), usize>::with_capacity(0, 0))
     }
@@ -31,7 +31,7 @@ impl GrowableGraph for PetgraphBackedGraph {
     }
 }
 
-impl EdgeShrinkableGraph for PetgraphBackedGraph {
+impl EdgeShrinkableGraph for AdjacentListGraph {
     fn remove_edge(&mut self, edge: &EdgeId) -> Option<Edge> {
         let pg_eidx = EdgeIndex::new(edge.to_raw());
         if let Some((src, sink)) = self.0.remove_edge(pg_eidx) {
@@ -46,7 +46,7 @@ impl EdgeShrinkableGraph for PetgraphBackedGraph {
     }
 }
 
-impl VertexShrinkableGraph for PetgraphBackedGraph {
+impl VertexShrinkableGraph for AdjacentListGraph {
     fn remove_vertex(&mut self, v: &VertexId) -> Box<dyn Iterator<Item = Edge> + 'static> {
         let a = NodeIndex::new(v.to_raw());
         let res: BTreeSet<Edge> = self
@@ -67,7 +67,7 @@ impl VertexShrinkableGraph for PetgraphBackedGraph {
     }
 }
 
-impl QueryableGraph for PetgraphBackedGraph {
+impl QueryableGraph for AdjacentListGraph {
     fn vertex_size(&self) -> usize {
         self.0.node_count()
     }
