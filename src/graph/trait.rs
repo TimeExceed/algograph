@@ -44,8 +44,8 @@ where
     G: QueryableGraph,
 {
     graph: &'a G,
-    preamble: Option<&'a str>,
-    epilogue: Option<&'a str>,
+    init_indent: usize,
+    indent_step: usize,
 }
 
 impl<'a, G> GraphDebug<'a, G>
@@ -55,19 +55,23 @@ where
     fn new(graph: &'a G) -> Self {
         Self {
             graph,
-            preamble: None,
-            epilogue: None,
+            init_indent: 0,
+            indent_step: 2,
         }
     }
 
-    pub fn preamble(mut self, pre: &'a str) -> Self {
-        self.preamble.replace(pre);
+    pub fn indent(mut self, init: usize, step: usize) -> Self {
+        self.init_indent = init;
+        self.indent_step = step;
         self
     }
 
-    pub fn epilogue(mut self, epi: &'a str) -> Self {
-        self.epilogue.replace(epi);
-        self
+    fn display_indent(&self, f: &mut std::fmt::Formatter<'_>, level: usize) -> std::fmt::Result {
+        let indention = self.init_indent + self.indent_step * level;
+        for _ in 0..indention {
+            write!(f, " ")?;
+        }
+        Ok(())
     }
 }
 
@@ -76,17 +80,13 @@ where
     G: QueryableGraph,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(pre) = self.preamble {
-            writeln!(f, "{}", pre)?;
-        }
         for v in self.graph.iter_vertices() {
+            self.display_indent(f, 0)?;
             writeln!(f, "{:?}", v)?;
             for e in self.graph.out_edges(&v) {
-                writeln!(f, "  --{:?}-> {:?}", e.id, e.sink)?;
+                self.display_indent(f, 1)?;
+                writeln!(f, "--{:?}-> {:?}", e.id, e.sink)?;
             }
-        }
-        if let Some(epi) = self.epilogue {
-            writeln!(f, "{}", epi)?;
         }
         Ok(())
     }
