@@ -1,6 +1,8 @@
 use crate::graph::*;
 use bimap::BiHashMap;
 
+/// This wraps a graph and mappings of vertices and edges from another graph.
+/// Usually, this works with `directed::tests::Ops`.
 #[derive(Clone)]
 pub struct MappedGraph<G> {
     pub graph: G,

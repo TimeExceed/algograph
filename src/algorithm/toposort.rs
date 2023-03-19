@@ -3,6 +3,7 @@ use ahash::RandomState;
 use keyed_priority_queue::KeyedPriorityQueue;
 use std::cmp::Reverse;
 
+/// Trait and default implementation of topological sorting.
 pub trait TopologicalSort
 where
     Self: QueryableGraph + Sized,

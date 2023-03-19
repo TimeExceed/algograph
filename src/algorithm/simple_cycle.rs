@@ -2,14 +2,17 @@ use crate::graph::*;
 use ahash::RandomState;
 use std::collections::{HashMap, HashSet};
 
+/// Trait and default implementation of finding simple cycles on both directed and undirected graphs.
 pub trait SimpleCycles
 where
     Self: QueryableGraph + Sized,
 {
+    /// Finds all simple cycles of a graph.
     fn simple_cycles(&self) -> Box<dyn Iterator<Item = Box<dyn Iterator<Item = Edge> + '_>> + '_> {
         Box::new(CycleIterator::exhaust(self))
     }
 
+    /// Finds simple cycles only reachable from `vert`.
     fn simple_cycles_reachable_from(
         &self,
         vert: &VertexId,

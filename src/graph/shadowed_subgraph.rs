@@ -2,6 +2,11 @@ use crate::graph::*;
 use ahash::RandomState;
 use std::collections::HashSet;
 
+/// A subgraph by shadowing some of vertices and edges in the underlying graph.
+///
+/// Vertices and edges can be covered by removing them from this subgraph.
+/// Thus, while removing vertices and/or edges from this subgraph,
+/// the underlying graph will be kept unchanged.
 pub struct ShadowedSubgraph<'a, G> {
     lower_graph: &'a G,
     shadowed_vertices: HashSet<VertexId, RandomState>,
@@ -15,13 +20,31 @@ where
     const DIRECTED_OR_NOT: bool = G::DIRECTED_OR_NOT;
 }
 
-impl<'a, G> ShadowedSubgraph<'a, G> {
-    pub fn new(lower_graph: &'a G) -> Self {
+impl<'a, G> Subgraph for ShadowedSubgraph<'a, G>
+where
+    G: QueryableGraph,
+{
+    type LowerGraph = &'a G;
+
+    fn new(lower_graph: Self::LowerGraph) -> Self {
         Self {
             lower_graph,
             shadowed_edges: HashSet::with_hasher(RandomState::new()),
             shadowed_vertices: HashSet::with_hasher(RandomState::new()),
         }
+    }
+
+    fn uncover_edge(&mut self, e: EdgeId) -> &mut Self {
+        if let Some(edge) = self.lower_graph.find_edge(&e) {
+            self.shadowed_edges.remove(&e);
+            self.uncover_vertex(edge.source).uncover_vertex(edge.sink);
+        }
+        self
+    }
+
+    fn uncover_vertex(&mut self, v: VertexId) -> &mut Self {
+        self.shadowed_vertices.remove(&v);
+        self
     }
 }
 

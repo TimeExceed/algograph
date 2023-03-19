@@ -1,3 +1,5 @@
+//! Implementations of low-level directed graph
+
 mod adjacent_list;
 pub use self::adjacent_list::*;
 mod tree_backed;

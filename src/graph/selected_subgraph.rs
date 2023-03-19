@@ -2,6 +2,11 @@ use crate::graph::*;
 use ahash::RandomState;
 use std::collections::HashSet;
 
+/// A subgraph with selected vertices and edges.
+///
+/// Vertices and edges can be covered by removing them from this subgraph.
+/// Thus, while removing vertices and/or edges from this subgraph,
+/// the underlying graph will be kept unchanged.
 pub struct SelectedSubgraph<'a, G> {
     lower_graph: &'a G,
     selected_vertices: HashSet<VertexId, RandomState>,
@@ -15,32 +20,31 @@ where
     const DIRECTED_OR_NOT: bool = G::DIRECTED_OR_NOT;
 }
 
-impl<'a, G> SelectedSubgraph<'a, G>
+impl<'a, G> Subgraph for SelectedSubgraph<'a, G>
 where
     G: QueryableGraph,
 {
-    pub fn new<EI, VI>(lower_graph: &'a G, edges: EI, additional_vertices: VI) -> Self
-    where
-        EI: Iterator<Item = EdgeId>,
-        VI: Iterator<Item = VertexId>,
-    {
-        let selected_edges: HashSet<EdgeId, RandomState> = edges
-            .filter(|e| lower_graph.find_edge(e).is_some())
-            .collect();
-        let selected_vertices = selected_edges
-            .iter()
-            .map(|e| {
-                let e = lower_graph.find_edge(e).unwrap();
-                [e.source, e.sink]
-            })
-            .flatten()
-            .chain(additional_vertices)
-            .collect();
+    type LowerGraph = &'a G;
+
+    fn new(lower_graph: Self::LowerGraph) -> Self {
         Self {
             lower_graph,
-            selected_vertices,
-            selected_edges,
+            selected_vertices: HashSet::with_hasher(RandomState::new()),
+            selected_edges: HashSet::with_hasher(RandomState::new()),
         }
+    }
+
+    fn uncover_vertex(&mut self, v: VertexId) -> &mut Self {
+        self.selected_vertices.insert(v);
+        self
+    }
+
+    fn uncover_edge(&mut self, e: EdgeId) -> &mut Self {
+        if let Some(edge) = self.lower_graph.find_edge(&e) {
+            self.selected_edges.insert(e);
+            self.uncover_vertex(edge.source).uncover_vertex(edge.sink);
+        }
+        self
     }
 }
 
@@ -177,11 +181,16 @@ mod tests {
         };
         let trial = {
             let mut trial = MappedGraph {
-                graph: SelectedSubgraph::new(
-                    &base.graph,
-                    base.graph.iter_edges().map(|e| e.id),
-                    base.graph.iter_vertices(),
-                ),
+                graph: {
+                    let mut g = SelectedSubgraph::new(&base.graph);
+                    for e in base.graph.iter_edges() {
+                        g.uncover_edge(e.id);
+                    }
+                    for v in base.graph.iter_vertices() {
+                        g.uncover_vertex(v);
+                    }
+                    g
+                },
                 vmap: base.vmap.clone(),
                 emap: base.emap.clone(),
             };
