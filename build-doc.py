@@ -6,7 +6,8 @@ import shutil as sh
 
 def clean_dir():
     rsdoc_dir = Path('target/doc')
-    sh.rmtree(rsdoc_dir)
+    if rsdoc_dir.exists():
+        sh.rmtree(rsdoc_dir)
 
 def cargo_doc():
     env = os.environ.copy()

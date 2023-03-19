@@ -1,11 +1,14 @@
 use super::VertexId;
 
+/// ID for edges, which are essentially `usize`.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct EdgeId(pub usize);
 
+/// A factory to generate `EdgeId` uniquely.
 #[derive(Clone)]
 pub struct EdgeIdFactory(usize);
 
+/// Information about a low-level edge.
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct Edge {
     pub id: EdgeId,

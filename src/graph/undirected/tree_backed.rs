@@ -1,12 +1,24 @@
 use crate::graph::*;
 use std::collections::{BTreeMap, BTreeSet};
 
-/// A tree-backed directed graph.
+/// An undirected graph with balanced computational complexity.
 ///
-/// For any digraph operations, this is probably not the fastest implementation.
-/// But it is balanced.
-/// For all point queries, it is $O(\log n)$; for all iterations, it is amortized $O(1)$.
-/// Besides, iterations are always in the order of vertex/edge insertion order.
+/// |                    | Complexity                                                                                   |
+/// | ------------------ | -------------------------------------------------------------------------------------------- |
+/// | `add_vertex`       | $O(\log \|V\|)$                                                                              |
+/// | `add_edge`         | $O(\log \|V\| + \log \|E\|)$                                                                 |
+/// | `remove_edge`      | $O(\log \|E\|)$                                                                              |
+/// | `remove_vertex`    | $O(\log \|V\| + \|E'\|)$, where $E'$ is the set of edges connecting to the vertex to remove. |
+/// | `vertex_size`      | $O(1)$                                                                                       |
+/// | `iter_vertices`    | amortized $O(1)$ and $O(\log \|V\|)$ in the worst cases.                                     |
+/// | `contains_vertex`  | $O(\log \|V\|)$                                                                              |
+/// | `edge_size`        | $O(1)$                                                                                       |
+/// | `iter_edges`       | amortized $O(1)$ and $O(\log \|E\|)$ in the worst cases.                                     |
+/// | `contains_edge`    | $O(\log \|E\|)$                                                                              |
+/// | `find_edge`        | $O(\log \|E\|)$                                                                              |
+/// | `edges_connecting` | returns in $O(\log \|E\|)$. amortized $O(1)$ and $O(\log \|E\|)$ in the worst cases on each call to `.next`.|
+/// | `in_edges`         | returns in $O(\log \|E\|)$. amortized $O(1)$ and $O(\log \|E\|)$ in the worst cases on each call to `.next`.|
+/// | `out_edges`        | returns in $O(\log \|E\|)$. amortized $O(1)$ and $O(\log \|E\|)$ in the worst cases on each call to `.next`.|
 #[derive(Clone)]
 pub struct TreeBackedGraph {
     vid_factory: VertexIdFactory,

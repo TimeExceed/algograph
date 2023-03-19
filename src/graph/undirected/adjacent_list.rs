@@ -6,6 +6,24 @@ use petgraph::{
 };
 use std::collections::BTreeSet;
 
+/// An undirected graph implemented by adjacent lists.
+///
+/// |                    | Complexity                                                                                             |
+/// | ------------------ | ------------------------------------------------------------------------------------------------------ |
+/// | `add_vertex`       | $O(1)$                                                                                                 |
+/// | `add_edge`         | $O(1)$                                                                                                 |
+/// | `remove_edge`      | $O(\|E'\|)$, where $E'$ is the set of edges sharing the same endpoints of edge to remove.              |
+/// | `remove_vertex`    | $O(\|E'\|)$ calls to `remove_edge`, where $E'$ is the set of edges connecting to the vertex to remove. |
+/// | `vertex_size`      | $O(1)$                                                                                                 |
+/// | `iter_vertices`    | $O(1)$ per call to `.next()`.                                                                          |
+/// | `contains_vertex`  | $O(1)$                                                                                                 |
+/// | `edge_size`        | $O(1)$                                                                                                 |
+/// | `iter_edges`       | $O(1)$ per call to `.next()`.                                                                          |
+/// | `contains_edge`    | $O(1)$                                                                                                 |
+/// | `find_edge`        | $O(1)$                                                                                                 |
+/// | `edges_connecting` | returns in $O(1)$. $O(1)$ on each call to `.next`.                                                     |
+/// | `in_edges`         | returns in $O(1)$. $O(1)$ on each call to `.next`.                                                     |
+/// | `out_edges`        | returns in $O(1)$. $O(1)$ on each call to `.next`.                                                     |
 #[derive(Clone)]
 pub struct AdjacentListGraph(StableUnGraph<(), (VertexId, VertexId), usize>);
 

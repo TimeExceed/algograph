@@ -1,3 +1,4 @@
+//! Graph algorithms
 mod simple_cycle;
 pub use self::simple_cycle::*;
 mod toposort;

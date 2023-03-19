@@ -1,6 +1,8 @@
+/// ID for vertices, which are essentially `usize`.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct VertexId(pub usize);
 
+/// A factory to generate `VertexId` uniquely.
 #[derive(Clone)]
 pub struct VertexIdFactory(usize);
 
