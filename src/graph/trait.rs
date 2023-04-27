@@ -1,4 +1,5 @@
 use crate::graph::*;
+use std::io::Write;
 
 /// A trait for low-level growable graphs.
 pub trait GrowableGraph {
@@ -100,4 +101,22 @@ pub trait Subgraph {
     ///
     /// Uncovering an already uncovered edge takes no effect at all.
     fn uncover_edge(&mut self, v: EdgeId) -> &mut Self;
+}
+
+
+pub trait DumpInGraphviz
+where Self: QueryableGraph + DirectedOrNot
+{
+    fn dump_in_graphviz(&self, graph_name: &str) -> String {
+        let mut res = String::new();
+        if Self::DIRECTED_OR_NOT {
+            res.push_str("digraph ");
+        } else {
+            res.push_str("graph ");
+        }
+        res.push_str(graph_name);
+        res.push_str(" {");
+        res.push_str("}");
+        res
+    }
 }
