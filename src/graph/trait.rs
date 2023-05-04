@@ -1,5 +1,4 @@
 use crate::graph::*;
-use std::io::Write;
 
 /// A trait for low-level growable graphs.
 pub trait GrowableGraph {
@@ -104,19 +103,67 @@ pub trait Subgraph {
 }
 
 
-pub trait DumpInGraphviz
-where Self: QueryableGraph + DirectedOrNot
+pub trait DumpInGraphviz: QueryableGraph + DirectedOrNot
 {
-    fn dump_in_graphviz(&self, graph_name: &str) -> String {
-        let mut res = String::new();
+    fn dump_in_graphviz<W>(&self, out: &mut W, graph_name: &str) -> std::io::Result<()> where W: std::io::Write {
         if Self::DIRECTED_OR_NOT {
-            res.push_str("digraph ");
+            writeln!(out, "digraph {} {{", graph_name)?;
         } else {
-            res.push_str("graph ");
+            writeln!(out, "graph {} {{", graph_name)?;
         }
-        res.push_str(graph_name);
-        res.push_str(" {");
-        res.push_str("}");
-        res
+        for v in self.iter_vertices() {
+            writeln!(out, "  {} ;", v.0)?;
+        }
+        for e in self.iter_edges() {
+            if Self::DIRECTED_OR_NOT {
+                writeln!(out, "  {} -> {} ;", e.source.0, e.sink.0)?;
+            } else {
+                writeln!(out, "  {} -- {} ;", e.source.0, e.sink.0)?;
+            }
+        }
+        writeln!(out, "}}")?;
+        Ok(())
+    }
+}
+
+impl<G: QueryableGraph + DirectedOrNot> DumpInGraphviz for G {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::graph::{directed, undirected};
+
+    #[test]
+    fn digraph_to_graphviz() {
+        let mut g = directed::AdjacentListGraph::new();
+        let v = g.add_vertex();
+        g.add_edge(v, v);
+        let trial = {
+            let mut trial = vec![];
+            g.dump_in_graphviz(&mut trial, "trial").unwrap();
+            String::from_utf8(trial).unwrap()
+        };
+        assert_eq!(trial, r#"digraph trial {
+  0 ;
+  0 -> 0 ;
+}
+"#);
+    }
+
+    #[test]
+    fn undigraph_to_graphviz() {
+        let mut g = undirected::AdjacentListGraph::new();
+        let v = g.add_vertex();
+        g.add_edge(v, v);
+        let trial = {
+            let mut trial = vec![];
+            g.dump_in_graphviz(&mut trial, "trial").unwrap();
+            String::from_utf8(trial).unwrap()
+        };
+        assert_eq!(trial, r#"graph trial {
+  0 ;
+  0 -- 0 ;
+}
+"#);
     }
 }
