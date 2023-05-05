@@ -28,7 +28,7 @@ where
 
     fn contains_vertex(&self, v: &VertexId) -> bool {
         if let Some(l) = self.vmap.get_by_right(v) {
-            self.graph.contains_vertex(&l)
+            self.graph.contains_vertex(l)
         } else {
             false
         }
@@ -182,6 +182,15 @@ where
 }
 
 impl<G> Eq for MappedGraph<G> where G: QueryableGraph {}
+
+impl<G> Default for MappedGraph<G>
+where
+    G: GrowableGraph + EdgeShrinkableGraph + VertexShrinkableGraph,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl<G> MappedGraph<G>
 where

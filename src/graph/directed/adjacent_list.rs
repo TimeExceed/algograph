@@ -70,8 +70,7 @@ impl VertexShrinkableGraph for AdjacentListGraph {
         let a = NodeIndex::new(v.to_raw());
         let res: BTreeSet<Edge> = [Direction::Incoming, Direction::Outgoing]
             .into_iter()
-            .map(|dir| self.0.edges_directed(a, dir))
-            .flatten()
+            .flat_map(|dir| self.0.edges_directed(a, dir))
             .map(|e| {
                 let (src, sink) = e.weight();
                 let eid = EdgeId::new(e.id().index());

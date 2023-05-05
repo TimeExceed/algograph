@@ -54,8 +54,8 @@ where
                             self.graph.remove_edge(&edge.id);
                             if self.exhausted_vertices.contains(&edge.sink) {
                                 // intend to do nothing
-                            } else if let Some(_) = self.come_from.get(&edge.sink) {
-                                let terminal = edge.sink.clone();
+                            } else if self.come_from.get(&edge.sink).is_some() {
+                                let terminal = edge.sink;
                                 let mut res = vec![edge.clone()];
                                 let mut edge = edge;
                                 loop {
@@ -77,8 +77,8 @@ where
                     }
                 }
             } else if let Some(vert) = self.to_exhaust_vertices.pop() {
-                if !self.come_from.contains_key(&vert) {
-                    self.come_from.insert(vert, None);
+                if let std::collections::hash_map::Entry::Vacant(e) = self.come_from.entry(vert) {
+                    e.insert(None);
                     self.extend_stack(vert);
                 }
             } else {
@@ -147,10 +147,7 @@ mod tests {
             let mut g = TreeBackedGraph::new();
             let v = g.add_vertex();
             g.add_edge(v, v);
-            let trial: Vec<_> = g
-                .simple_cycles()
-                .map(|cycle| super::fmt_cycle(cycle))
-                .collect();
+            let trial: Vec<_> = g.simple_cycles().map(super::fmt_cycle).collect();
             let oracle = vec![format!("{v:?} -> {v:?}")];
             assert_eq!(trial, oracle);
         }
@@ -164,7 +161,7 @@ mod tests {
             g.add_edge(v1, v0);
             let trial: Vec<_> = g
                 .simple_cycles_reachable_from(&v0)
-                .map(|cycle| super::fmt_cycle(cycle))
+                .map(super::fmt_cycle)
                 .collect();
             let oracle = vec![format!("{v0:?} -> {v1:?} -> {v0:?}")];
             assert_eq!(trial, oracle);
@@ -207,10 +204,7 @@ mod tests {
             let mut g = TreeBackedGraph::new();
             let v = g.add_vertex();
             g.add_edge(v, v);
-            let trial: Vec<_> = g
-                .simple_cycles()
-                .map(|cycle| super::fmt_cycle(cycle))
-                .collect();
+            let trial: Vec<_> = g.simple_cycles().map(super::fmt_cycle).collect();
             let oracle = vec![format!("{v:?} -> {v:?}")];
             assert_eq!(trial, oracle);
         }
@@ -223,7 +217,7 @@ mod tests {
             g.add_edge(v0, v1);
             let trial: Vec<_> = g
                 .simple_cycles_reachable_from(&v0)
-                .map(|cycle| super::fmt_cycle(cycle))
+                .map(super::fmt_cycle)
                 .collect();
             let oracle: Vec<String> = vec![];
             assert_eq!(trial, oracle);
@@ -238,7 +232,7 @@ mod tests {
             g.add_edge(v0, v1);
             let trial: Vec<_> = g
                 .simple_cycles_reachable_from(&v0)
-                .map(|cycle| super::fmt_cycle(cycle))
+                .map(super::fmt_cycle)
                 .collect();
             let oracle = vec![format!("{v0:?} -> {v1:?} -> {v0:?}")];
             assert_eq!(trial, oracle);

@@ -170,9 +170,7 @@ mod tests {
             Op::RemoveEdge(_) => false,
         });
         let add_ops = Ops { ops: add };
-        let remove_ops = Ops {
-            ops: remove.clone(),
-        };
+        let remove_ops = Ops { ops: remove };
         let base: MappedGraph<TreeBackedGraph> = (&add_ops).into();
         let oracle = {
             let mut oracle = base.clone();

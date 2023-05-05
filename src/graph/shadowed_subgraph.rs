@@ -82,7 +82,7 @@ where
             .chain(self.lower_graph.out_edges(vertex));
         let mut res = vec![];
         for e in edges {
-            if let Some(_) = self.remove_edge(&e.id) {
+            if self.remove_edge(&e.id).is_some() {
                 res.push(e);
             }
         }
@@ -190,9 +190,7 @@ mod tests {
             Op::RemoveEdge(_) => false,
         });
         let add_ops = Ops { ops: add };
-        let remove_ops = Ops {
-            ops: remove.clone(),
-        };
+        let remove_ops = Ops { ops: remove };
         let base: MappedGraph<TreeBackedGraph> = (&add_ops).into();
         let oracle = {
             let mut oracle = base.clone();

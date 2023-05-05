@@ -16,6 +16,12 @@ pub struct Edge {
     pub sink: VertexId,
 }
 
+impl Default for EdgeIdFactory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EdgeIdFactory {
     pub fn new() -> Self {
         Self(0)

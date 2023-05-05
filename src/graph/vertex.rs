@@ -6,6 +6,12 @@ pub struct VertexId(pub usize);
 #[derive(Clone)]
 pub struct VertexIdFactory(usize);
 
+impl Default for VertexIdFactory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VertexIdFactory {
     pub fn new() -> Self {
         Self(0)

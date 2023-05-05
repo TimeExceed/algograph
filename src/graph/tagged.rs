@@ -47,6 +47,16 @@ where
     const DIRECTED_OR_NOT: bool = G::DIRECTED_OR_NOT;
 }
 
+impl<VKey, VTag, ETag, G> Default for TaggedGraph<VKey, VTag, ETag, G>
+where
+    VKey: Hash + Eq + Clone,
+    G: GrowableGraph,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<VKey, VTag, ETag, G> TaggedGraph<VKey, VTag, ETag, G>
 where
     VKey: Hash + Eq + Clone,
@@ -459,6 +469,7 @@ where
     VKey: Hash + Eq,
     G: crate::algorithm::SimpleCycles,
 {
+    #[allow(clippy::type_complexity)]
     pub fn simple_cycles(
         &self,
     ) -> Box<dyn Iterator<Item = Box<dyn Iterator<Item = TaggedEdge<&VKey, &VTag, &ETag>> + '_>> + '_>
@@ -471,6 +482,7 @@ where
         Box::new(it)
     }
 
+    #[allow(clippy::type_complexity)]
     pub fn simple_cycles_reachable_from_id(
         &self,
         vert: &VertexId,
@@ -487,6 +499,7 @@ where
         Box::new(it)
     }
 
+    #[allow(clippy::type_complexity)]
     pub fn simple_cycles_reachable_from_key(
         &self,
         vert: &VKey,
@@ -527,6 +540,7 @@ where
     VKey: Hash + Eq,
     G: DumpInGraphviz,
 {
+    #[allow(clippy::type_complexity)]
     pub fn dump_in_graphviz<W>(
         &self,
         out: &mut W,

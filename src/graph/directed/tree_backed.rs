@@ -79,7 +79,7 @@ impl GrowableGraph for TreeBackedGraph {
 impl EdgeShrinkableGraph for TreeBackedGraph {
     fn remove_edge(&mut self, edge: &EdgeId) -> Option<Edge> {
         match self.edges.remove(edge) {
-            None => return None,
+            None => None,
             Some((src, snk)) => {
                 self.in_edges.remove(&(snk, src, *edge));
                 self.out_edges.remove(&(src, snk, *edge));

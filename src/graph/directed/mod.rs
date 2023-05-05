@@ -113,7 +113,7 @@ mod tests {
             })
             .map(move |n| {
                 let mut res = me.clone();
-                res.ops = me.ops[0..n].iter().map(|x| x.clone()).collect();
+                res.ops = me.ops[0..n].iter().copied().collect();
                 res
             });
             Box::new(it)
