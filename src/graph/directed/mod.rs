@@ -130,11 +130,13 @@ mod tests {
             g.dump_in_graphviz(&mut trial, "trial").unwrap();
             String::from_utf8(trial).unwrap()
         };
-        assert_eq!(trial, r#"digraph trial {
+        assert_eq!(
+            trial,
+            r#"digraph trial {
   0 ;
   0 -> 0 ;
 }
-"#);
+"#
+        );
     }
-
 }

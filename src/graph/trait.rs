@@ -102,10 +102,12 @@ pub trait Subgraph {
     fn uncover_edge(&mut self, v: EdgeId) -> &mut Self;
 }
 
-
-pub trait DumpInGraphviz: QueryableGraph + DirectedOrNot
-{
-    fn dump_in_graphviz<W>(&self, out: &mut W, graph_name: &str) -> std::io::Result<()> where W: std::io::Write {
+/// A trait with default implementation for dumping a (directed or not) graph in graphviz format.
+pub trait DumpInGraphviz: QueryableGraph + DirectedOrNot {
+    fn dump_in_graphviz<W>(&self, out: &mut W, graph_name: &str) -> std::io::Result<()>
+    where
+        W: std::io::Write,
+    {
         if Self::DIRECTED_OR_NOT {
             writeln!(out, "digraph {} {{", graph_name)?;
         } else {
@@ -127,4 +129,3 @@ pub trait DumpInGraphviz: QueryableGraph + DirectedOrNot
 }
 
 impl<G: QueryableGraph + DirectedOrNot> DumpInGraphviz for G {}
-
