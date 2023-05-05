@@ -119,4 +119,24 @@ mod tests {
             Box::new(it)
         }
     }
+
+    #[test]
+    fn to_graphviz() {
+        let mut g = directed::AdjacentListGraph::new();
+        let v = g.add_vertex();
+        g.add_edge(v, v);
+        let trial = {
+            let mut trial = vec![];
+            g.dump_in_graphviz(&mut trial, "trial").unwrap();
+            String::from_utf8(trial).unwrap()
+        };
+        assert_eq!(
+            trial,
+            r#"digraph trial {
+  0 ;
+  0 -> 0 ;
+}
+"#
+        );
+    }
 }

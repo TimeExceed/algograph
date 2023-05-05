@@ -521,3 +521,145 @@ where
         Box::new(it)
     }
 }
+
+impl<VKey, VTag, ETag, G> TaggedGraph<VKey, VTag, ETag, G>
+where
+    VKey: Hash + Eq,
+    G: DumpInGraphviz,
+{
+    pub fn dump_in_graphviz<W>(
+        &self,
+        out: &mut W,
+        graph_name: &str,
+        vertex_label: fn(&TaggedVertex<&VKey, &VTag>) -> (String, Option<String>),
+        edge_label: fn(&TaggedEdge<&VKey, &VTag, &ETag>) -> Option<String>,
+    ) -> std::io::Result<()>
+    where
+        W: std::io::Write,
+    {
+        if G::DIRECTED_OR_NOT {
+            writeln!(out, "digraph {} {{", graph_name)?;
+        } else {
+            writeln!(out, "graph {} {{", graph_name)?;
+        }
+        let mut vkey = HashMap::with_hasher(RandomState::new());
+        for v in self.iter_vertices() {
+            let (key, label) = vertex_label(&v);
+            if let Some(label) = label {
+                writeln!(out, "  {} [{}] ;", key, label)?;
+            } else {
+                writeln!(out, "  {} ;", key)?;
+            }
+            vkey.insert(v.id, key);
+        }
+        let dir = if G::DIRECTED_OR_NOT { "->" } else { "--" };
+        for e in self.iter_edges() {
+            let src = vkey.get(&e.source.id).unwrap();
+            let snk = vkey.get(&e.sink.id).unwrap();
+            let label = edge_label(&e);
+            if let Some(label) = label {
+                writeln!(out, "  {} {} {} [{}] ;", src, dir, snk, label)?;
+            } else {
+                writeln!(out, "  {} {} {} ;", src, dir, snk)?;
+            }
+        }
+        writeln!(out, "}}")?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(PartialEq, Eq)]
+    enum Shape {
+        Default,
+        Rectangle,
+    }
+    enum Color {
+        Default,
+        Red,
+    }
+
+    #[test]
+    fn directed_tagged_graph_to_graphviz() {
+        let mut g = TaggedGraph::<usize, Shape, Color>::new();
+        g.overwrite_vertex(&0, Shape::Default);
+        g.overwrite_vertex(&1, Shape::Rectangle);
+        g.add_edge(&0, &1, Color::Red);
+        g.add_edge(&0, &0, Color::Default);
+        let trial = {
+            let mut buf = vec![];
+            g.dump_in_graphviz(
+                &mut buf,
+                "trial",
+                |v| {
+                    let name = format!("{}", v.key);
+                    let label = match v.tag {
+                        Shape::Rectangle => Some("shape=rectangle".to_owned()),
+                        _ => None,
+                    };
+                    (name, label)
+                },
+                |e| match e.tag {
+                    Color::Red => Some("color=red".to_owned()),
+                    _ => None,
+                },
+            )
+            .unwrap();
+            String::from_utf8(buf).unwrap()
+        };
+        assert_eq!(
+            trial,
+            r#"digraph trial {
+  0 ;
+  1 [shape=rectangle] ;
+  0 -> 1 [color=red] ;
+  0 -> 0 ;
+}
+"#
+        );
+    }
+
+    #[test]
+    fn undirected_tagged_graph_to_graphviz() {
+        let mut g = TaggedGraph::<usize, Shape, Color, undirected::TreeBackedGraph>::new();
+        g.overwrite_vertex(&0, Shape::Default);
+        g.overwrite_vertex(&1, Shape::Rectangle);
+        g.add_edge(&0, &1, Color::Red);
+        g.add_edge(&0, &0, Color::Default);
+        let trial = {
+            let mut buf = vec![];
+            g.dump_in_graphviz(
+                &mut buf,
+                "trial",
+                |v| {
+                    let name = format!("{}", v.key);
+                    let label = match v.tag {
+                        Shape::Rectangle => Some("shape=rectangle".to_owned()),
+                        _ => None,
+                    };
+                    (name, label)
+                },
+                |e| match e.tag {
+                    Color::Red => Some("color=red".to_owned()),
+                    _ => None,
+                },
+            )
+            .unwrap();
+            String::from_utf8(buf).unwrap()
+        };
+        println!("{}", trial);
+        assert_eq!(
+            trial,
+            r#"graph trial {
+  0 ;
+  1 [shape=rectangle] ;
+  0 -- 1 [color=red] ;
+  0 -- 0 ;
+}
+"#
+        );
+    }
+}
