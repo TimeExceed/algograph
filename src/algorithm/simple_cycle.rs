@@ -7,12 +7,12 @@ pub trait SimpleCycles
 where
     Self: QueryableGraph + Sized,
 {
-    /// Finds all simple cycles of a graph.
+    /// Iterates over all simple cycles of a graph.
     fn simple_cycles(&self) -> Box<dyn Iterator<Item = Box<dyn Iterator<Item = Edge> + '_>> + '_> {
         Box::new(CycleIterator::exhaust(self))
     }
 
-    /// Finds simple cycles only reachable from `vert`.
+    /// Iterates over simple cycles only reachable from `vert`.
     fn simple_cycles_reachable_from(
         &self,
         vert: &VertexId,
@@ -22,6 +22,56 @@ where
 }
 
 impl<G: QueryableGraph> SimpleCycles for G {}
+
+/// Trait and default implementation of finding simple cycles on both directed and undirected tagged graphs.
+pub trait SimpleCyclesForTaggedGraph
+where
+    Self: crate::tagged::QueryableTaggedGraph,
+    Self::LowerGraph: crate::algorithm::SimpleCycles,
+{
+    /// Iterates over all simple cycles.
+    #[allow(clippy::type_complexity)]
+    fn simple_cycles(
+        &self,
+    ) -> Box<dyn Iterator<Item = Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_>> + '_> {
+        let it = self.lower_graph().simple_cycles().map(|es| {
+            let it: Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_> = Box::new(es.map(|e| {
+                let res = self.edge_by_id(&e.id).unwrap();
+                (e.id, res)
+            }));
+            it
+        });
+        Box::new(it)
+    }
+
+    /// Iterates over simple cycles only reachable from `vert`.
+    #[allow(clippy::type_complexity)]
+    fn simple_cycles_reachable_from(
+        &self,
+        vert: &Self::Vertex,
+    ) -> Box<dyn Iterator<Item = Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_>> + '_> {
+        let vid = self.id_by_vertex(vert).unwrap();
+        let it = self
+            .lower_graph()
+            .simple_cycles_reachable_from(&vid)
+            .map(|es| {
+                let it: Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_> =
+                    Box::new(es.map(|e| {
+                        let res = self.edge_by_id(&e.id).unwrap();
+                        (e.id, res)
+                    }));
+                it
+            });
+        Box::new(it)
+    }
+}
+
+impl<G> SimpleCyclesForTaggedGraph for G
+where
+    G: crate::tagged::QueryableTaggedGraph,
+    G::LowerGraph: crate::algorithm::SimpleCycles,
+{
+}
 
 struct CycleIterator<'a, G>
 where

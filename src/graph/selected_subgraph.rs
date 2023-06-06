@@ -4,9 +4,8 @@ use std::collections::HashSet;
 
 /// A subgraph with selected vertices and edges.
 ///
-/// Vertices and edges can be covered by removing them from this subgraph.
-/// Thus, while removing vertices and/or edges from this subgraph,
-/// the underlying graph will be kept unchanged.
+/// Removing vertices and edges from a [SelectedSubgraph] just unselects them.
+/// Therefore, shrinking a [SelectedSubgraph] keeps the underlying graph unchanged.
 pub struct SelectedSubgraph<'a, G> {
     lower_graph: &'a G,
     selected_vertices: HashSet<VertexId, RandomState>,
@@ -34,15 +33,15 @@ where
         }
     }
 
-    fn uncover_vertex(&mut self, v: VertexId) -> &mut Self {
+    fn disclose_vertex(&mut self, v: VertexId) -> &mut Self {
         self.selected_vertices.insert(v);
         self
     }
 
-    fn uncover_edge(&mut self, e: EdgeId) -> &mut Self {
+    fn disclose_edge(&mut self, e: EdgeId) -> &mut Self {
         if let Some(edge) = self.lower_graph.find_edge(&e) {
             self.selected_edges.insert(e);
-            self.uncover_vertex(edge.source).uncover_vertex(edge.sink);
+            self.disclose_vertex(edge.source).disclose_vertex(edge.sink);
         }
         self
     }
@@ -182,10 +181,10 @@ mod tests {
                 graph: {
                     let mut g = SelectedSubgraph::new(&base.graph);
                     for e in base.graph.iter_edges() {
-                        g.uncover_edge(e.id);
+                        g.disclose_edge(e.id);
                     }
                     for v in base.graph.iter_vertices() {
-                        g.uncover_vertex(v);
+                        g.disclose_vertex(v);
                     }
                     g
                 },

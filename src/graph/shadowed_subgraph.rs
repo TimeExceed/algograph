@@ -4,9 +4,8 @@ use std::collections::HashSet;
 
 /// A subgraph by shadowing some of vertices and edges in the underlying graph.
 ///
-/// Vertices and edges can be covered by removing them from this subgraph.
-/// Thus, while removing vertices and/or edges from this subgraph,
-/// the underlying graph will be kept unchanged.
+/// Removing vertices and edges from a [ShadowedSubgraph] just shadows them.
+/// Therefore, shrinking a [ShadowedSubgraph] keeps the underlying graph unchanged.
 pub struct ShadowedSubgraph<'a, G> {
     lower_graph: &'a G,
     shadowed_vertices: HashSet<VertexId, RandomState>,
@@ -34,15 +33,15 @@ where
         }
     }
 
-    fn uncover_edge(&mut self, e: EdgeId) -> &mut Self {
+    fn disclose_edge(&mut self, e: EdgeId) -> &mut Self {
         if let Some(edge) = self.lower_graph.find_edge(&e) {
             self.shadowed_edges.remove(&e);
-            self.uncover_vertex(edge.source).uncover_vertex(edge.sink);
+            self.disclose_vertex(edge.source).disclose_vertex(edge.sink);
         }
         self
     }
 
-    fn uncover_vertex(&mut self, v: VertexId) -> &mut Self {
+    fn disclose_vertex(&mut self, v: VertexId) -> &mut Self {
         self.shadowed_vertices.remove(&v);
         self
     }

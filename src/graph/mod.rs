@@ -7,7 +7,7 @@
 //! Can we copy a vertex?
 //! What is the cost of doing that copying?
 //!
-//! In this crate, there are traits and implements of low level graphs.
+//! In this crate, there are traits and implementations of low level graphs.
 //! Vertices and edges in low level graphs are lightweight ID's.
 //! They are essentially `usize`.
 //! Algorithm authors may feel free to copy and store these ID's.
@@ -40,8 +40,6 @@ pub use self::shadowed_subgraph::*;
 mod selected_subgraph;
 pub use self::selected_subgraph::*;
 mod graph_debug;
-pub mod tagged;
-pub use self::graph_debug::*;
 
 pub mod directed;
 pub mod undirected;

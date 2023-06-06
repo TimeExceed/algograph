@@ -8,12 +8,29 @@ pub trait TopologicalSort
 where
     Self: QueryableGraph + Sized,
 {
+    /// Iterates over vertices in the topological order.
     fn toposort(&self) -> Box<dyn Iterator<Item = VertexId> + '_> {
         Box::new(ToposortIter::new(self))
     }
 }
 
 impl<G: QueryableGraph> TopologicalSort for G {}
+
+/// Trait and default implementation of topological sorting for tagged graphs.
+pub trait TopologicalSortForTaggedGraph
+where
+    Self: crate::tagged::QueryableTaggedGraph,
+    Self::LowerGraph: crate::algorithm::TopologicalSort,
+{
+    /// Iterates over vertices in the topological order.
+    fn toposort(&self) -> Box<dyn Iterator<Item = &Self::Vertex> + '_> {
+        let it = self
+            .lower_graph()
+            .toposort()
+            .map(|vid| self.vertex_by_id(&vid).unwrap());
+        Box::new(it)
+    }
+}
 
 struct ToposortIter<'a, G>
 where

@@ -21,16 +21,15 @@ pub trait EdgeShrinkableGraph {
 
 /// A trait for low-level graphs whose vertices can be removed.
 pub trait VertexShrinkableGraph: EdgeShrinkableGraph {
-    /// Remove a vertex from the graph and all edges connected to this vertex.
+    /// Removes a vertex from the graph and all edges connected to this vertex.
     ///
     /// It returns an iterator over all edges connected to the vertex.
     /// Each edge will occur exactly once during the iteration.
     /// Thus, self-loops will occur once as well.
     ///
-    /// For undirected graphs, the removed vertex can be either the sources or the sinks of returned edges.
-    /// It is implementation-specific.
-    ///
-    /// If the vertex is not in the graph, it returns an empty iterator.
+    /// * For undirected graphs, the removed vertex can be either the sources or the sinks of returned edges.
+    ///   It is implementation-specific.
+    /// * If the vertex is not in the graph, it returns an empty iterator.
     fn remove_vertex(&mut self, vertex: &VertexId) -> Box<dyn Iterator<Item = Edge> + 'static>;
 }
 
@@ -72,7 +71,7 @@ pub trait QueryableGraph {
     where
         Self: Sized,
     {
-        Box::new(super::GraphDebug::new(self))
+        Box::new(super::graph_debug::GraphDebug::new(self))
     }
 }
 
@@ -90,16 +89,15 @@ pub trait Subgraph {
     type LowerGraph;
 
     fn new(lower_graph: Self::LowerGraph) -> Self;
-    /// Uncovers a vertex.
+    /// Discloses a vertex.
     ///
-    /// Edges connecting to this vertex will not be uncovered.
+    /// * Shadowed edges connecting to this vertex will not automatically be disclosed.
+    /// * It takes no effect at all to disclose an already disclosed vertex.
+    fn disclose_vertex(&mut self, v: VertexId) -> &mut Self;
+    /// Discloses an edge, and both endpoints of this edge as well.
     ///
-    /// Uncovering an already uncovered vertex takes no effect at all.
-    fn uncover_vertex(&mut self, v: VertexId) -> &mut Self;
-    /// Uncovers an edge, and both endpoints of this edge as well.
-    ///
-    /// Uncovering an already uncovered edge takes no effect at all.
-    fn uncover_edge(&mut self, v: EdgeId) -> &mut Self;
+    /// * It takes no effect at all to disclose an already disclosed edge.
+    fn disclose_edge(&mut self, v: EdgeId) -> &mut Self;
 }
 
 /// A trait with default implementation for dumping a (directed or not) graph in graphviz format.

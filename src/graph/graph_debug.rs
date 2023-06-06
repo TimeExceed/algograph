@@ -22,12 +22,6 @@ where
         }
     }
 
-    pub fn indent(mut self, init: usize, step: usize) -> Self {
-        self.init_indent = init;
-        self.indent_step = step;
-        self
-    }
-
     fn display_indent(&self, f: &mut std::fmt::Formatter<'_>, level: usize) -> std::fmt::Result {
         let indention = self.init_indent + self.indent_step * level;
         for _ in 0..indention {
