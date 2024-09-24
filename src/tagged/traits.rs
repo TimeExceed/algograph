@@ -48,17 +48,23 @@ where
     /// Total number of edges.
     fn edge_size(&self) -> usize;
     /// Iterates edges without any specific order.
-    fn iter_edges(&self) -> Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_>;
+    fn iter_edges(&self) -> Box<dyn Iterator<Item = (crate::graph::Edge, &Self::Edge)> + '_>;
     /// Iterates edges connecting two specified endpoints.
     fn edges_connecting(
         &self,
         source: &VertexId,
         sink: &VertexId,
-    ) -> Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_>;
+    ) -> Box<dyn Iterator<Item = (crate::graph::Edge, &Self::Edge)> + '_>;
     /// Iterates over in-edges of a specified vertex.
-    fn in_edges(&self, vid: &VertexId) -> Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_>;
+    fn in_edges(
+        &self,
+        vid: &VertexId,
+    ) -> Box<dyn Iterator<Item = (crate::graph::Edge, &Self::Edge)> + '_>;
     /// Iterates over out-edges of a specified vertex.
-    fn out_edges(&self, vid: &VertexId) -> Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_>;
+    fn out_edges(
+        &self,
+        vid: &VertexId,
+    ) -> Box<dyn Iterator<Item = (crate::graph::Edge, &Self::Edge)> + '_>;
 }
 
 /// Interfaces to add customized vertices and edges into tagged graphs.
@@ -127,10 +133,16 @@ where
     Self::Vertex: std::fmt::Debug,
     Self::Edge: std::fmt::Debug,
 {
-    fn debug(&self, init: usize, indent: usize) -> GraphDebug<'_, Self> {
+    /// Inspects into a tagged graph.
+    fn debug(&self) -> GraphDebug<'_, Self> {
+        self.debug_with_indent(0, 2)
+    }
+
+    /// Inspects into a tagged graph with customized indentation.
+    fn debug_with_indent(&self, init: usize, indent: usize) -> GraphDebug<'_, Self> {
         GraphDebug {
             graph: self,
-            indent: Indention {
+            indent: crate::util::Indention {
                 spaces: init,
                 step: indent,
             },
@@ -156,7 +168,7 @@ where
     G::Edge: std::fmt::Debug,
 {
     graph: &'a G,
-    indent: Indention,
+    indent: crate::util::Indention,
 }
 
 impl<'a, G> std::fmt::Debug for GraphDebug<'a, G>
@@ -167,16 +179,16 @@ where
     G::Edge: std::fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let indent = self.indent.one_more_level();
+        let indent = &self.indent;
+        let nxt_indent = self.indent.one_more_level();
         for (vid, vert) in self.graph.iter_vertices() {
-            writeln!(f, "{}{:?}", self.indent, vert)?;
-            for (_, edge) in self.graph.out_edges(&vid) {
+            writeln!(f, "{indent}{:?}", vert)?;
+            for (lower_edge, upper_edge) in self.graph.out_edges(&vid) {
                 writeln!(
                     f,
-                    "{}--{:?}-> {:?}",
-                    indent,
-                    edge,
-                    self.graph.vertex_by_id(&edge.sink()).unwrap()
+                    "{nxt_indent}--{:?}-> {:?}",
+                    upper_edge,
+                    self.graph.vertex_by_id(&lower_edge.sink).unwrap()
                 )?;
             }
         }
@@ -184,25 +196,56 @@ where
     }
 }
 
-struct Indention {
-    spaces: usize,
-    step: usize,
-}
+#[cfg(test)]
+mod tests {
+    use crate::{graph::*, tagged::*};
 
-impl std::fmt::Display for Indention {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for _ in 0..self.spaces {
-            write!(f, " ")?;
+    #[test]
+    fn undirected_graph_debug() {
+        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        struct E {
+            source: VertexId,
+            sink: VertexId,
         }
-        Ok(())
-    }
-}
+        impl crate::tagged::Edge for E {
+            fn source(&self) -> VertexId {
+                self.source
+            }
 
-impl Indention {
-    fn one_more_level(&self) -> Self {
-        Self {
-            spaces: self.spaces + self.step,
-            step: self.step,
+            fn sink(&self) -> VertexId {
+                self.sink
+            }
         }
+        let mut g = NaiveTaggedGraph::<String, E, undirected::TreeBackedGraph>::new();
+        let vertices = ["a".to_string(), "b".to_string(), "c".to_string()];
+        let mut vert_iter0 = vertices.iter();
+        while let Some(v0) = vert_iter0.next() {
+            let vid0 = g.overwrite_vertex(v0.clone());
+            for v1 in vert_iter0.clone() {
+                let vid1 = g.overwrite_vertex(v1.clone());
+                g.add_edge(E {
+                    source: vid0,
+                    sink: vid1,
+                });
+            }
+        }
+        println!("{:?}", g.debug());
+
+        use std::fmt::Write;
+        let mut out = String::new();
+        write!(&mut out, "{:?}", g.debug()).unwrap();
+        assert_eq!(
+            out,
+            r#""a"
+  --E { source: VertexId(0), sink: VertexId(1) }-> "b"
+  --E { source: VertexId(0), sink: VertexId(2) }-> "c"
+"b"
+  --E { source: VertexId(0), sink: VertexId(1) }-> "a"
+  --E { source: VertexId(1), sink: VertexId(2) }-> "c"
+"c"
+  --E { source: VertexId(0), sink: VertexId(2) }-> "a"
+  --E { source: VertexId(1), sink: VertexId(2) }-> "b"
+"#
+        );
     }
 }

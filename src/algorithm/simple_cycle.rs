@@ -104,7 +104,12 @@ where
                             self.graph.remove_edge(&edge.id);
                             if self.exhausted_vertices.contains(&edge.sink) {
                                 // intend to do nothing
-                            } else if self.come_from.get(&edge.sink).is_some() {
+                            } else if let std::collections::hash_map::Entry::Vacant(e) =
+                                self.come_from.entry(edge.sink)
+                            {
+                                e.insert(Some(edge.clone()));
+                                self.extend_stack(edge.sink);
+                            } else {
                                 let terminal = edge.sink;
                                 let mut res = vec![edge.clone()];
                                 let mut edge = edge;
@@ -119,9 +124,6 @@ where
                                 }
                                 res.reverse();
                                 return Some(Box::new(res.into_iter()));
-                            } else {
-                                self.come_from.insert(edge.sink, Some(edge.clone()));
-                                self.extend_stack(edge.sink);
                             }
                         }
                     }

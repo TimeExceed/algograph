@@ -219,12 +219,11 @@ where
                     }
                 }
                 directed::Op::AddEdge((source, sink, eid)) => {
-                    match (self.vmap.get_by_right(source), self.vmap.get_by_right(sink)) {
-                        (Some(my_src), Some(my_sink)) => {
+                    if let Some(my_src) = self.vmap.get_by_right(source) {
+                        if let Some(my_sink) = self.vmap.get_by_right(sink) {
                             let my_eid = self.graph.add_edge(*my_src, *my_sink);
                             self.emap.insert(my_eid, *eid);
                         }
-                        _ => {}
                     }
                 }
                 directed::Op::RemoveEdge(eid) => {

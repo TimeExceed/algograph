@@ -168,11 +168,11 @@ where
         self.edges.len()
     }
 
-    fn iter_edges(&self) -> Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_> {
-        let it = self
-            .lower_graph
-            .iter_edges()
-            .map(|e| (e.id, self.edge_by_id(&e.id).unwrap()));
+    fn iter_edges(&self) -> Box<dyn Iterator<Item = (crate::graph::Edge, &Self::Edge)> + '_> {
+        let it = self.lower_graph.iter_edges().map(|e| {
+            let upper_edge = self.edge_by_id(&e.id).unwrap();
+            (e, upper_edge)
+        });
         Box::new(it)
     }
 
@@ -180,27 +180,33 @@ where
         &self,
         source: &VertexId,
         sink: &VertexId,
-    ) -> Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_> {
-        let it = self
-            .lower_graph
-            .edges_connecting(source, sink)
-            .map(|e| (e.id, self.edge_by_id(&e.id).unwrap()));
+    ) -> Box<dyn Iterator<Item = (crate::graph::Edge, &Self::Edge)> + '_> {
+        let it = self.lower_graph.edges_connecting(source, sink).map(|e| {
+            let upper_edge = self.edge_by_id(&e.id).unwrap();
+            (e, upper_edge)
+        });
         Box::new(it)
     }
 
-    fn in_edges(&self, vid: &VertexId) -> Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_> {
-        let it = self
-            .lower_graph
-            .in_edges(vid)
-            .map(|e| (e.id, self.edge_by_id(&e.id).unwrap()));
+    fn in_edges(
+        &self,
+        vid: &VertexId,
+    ) -> Box<dyn Iterator<Item = (crate::graph::Edge, &Self::Edge)> + '_> {
+        let it = self.lower_graph.in_edges(vid).map(|e| {
+            let upper_edge = self.edge_by_id(&e.id).unwrap();
+            (e, upper_edge)
+        });
         Box::new(it)
     }
 
-    fn out_edges(&self, vid: &VertexId) -> Box<dyn Iterator<Item = (EdgeId, &Self::Edge)> + '_> {
-        let it = self
-            .lower_graph
-            .out_edges(vid)
-            .map(|e| (e.id, self.edge_by_id(&e.id).unwrap()));
+    fn out_edges(
+        &self,
+        vid: &VertexId,
+    ) -> Box<dyn Iterator<Item = (crate::graph::Edge, &Self::Edge)> + '_> {
+        let it = self.lower_graph.out_edges(vid).map(|e| {
+            let upper_edge = self.edge_by_id(&e.id).unwrap();
+            (e, upper_edge)
+        });
         Box::new(it)
     }
 }

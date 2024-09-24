@@ -71,7 +71,23 @@ pub trait QueryableGraph {
     where
         Self: Sized,
     {
-        Box::new(super::graph_debug::GraphDebug::new(self))
+        self.debug_with_indent(0, 2)
+    }
+
+    /// Returns something can inspect into the graph, with customzied indentation.
+    fn debug_with_indent(
+        &self,
+        init_indent: usize,
+        indent_step: usize,
+    ) -> Box<dyn std::fmt::Debug + '_>
+    where
+        Self: Sized,
+    {
+        Box::new(super::graph_debug::GraphDebug::new(
+            self,
+            init_indent,
+            indent_step,
+        ))
     }
 }
 
