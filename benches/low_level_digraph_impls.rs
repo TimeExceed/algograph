@@ -1,18 +1,7 @@
 use algograph::graph::{directed::*, *};
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rand::Rng;
-use static_init::dynamic;
-
-#[dynamic]
-static VERTEX_SIZE: usize = std::env::var("VERTEX_SIZE")
-    .unwrap_or("10000".to_string())
-    .parse()
-    .unwrap();
-#[dynamic]
-static EDGE_SIZE: usize = std::env::var("EDGE_SIZE")
-    .unwrap_or("100000".to_string())
-    .parse()
-    .unwrap();
+use criterion::{Criterion, criterion_group, criterion_main};
+use rand::seq::IndexedRandom;
+use std::hint::black_box;
 
 criterion_group!(benches, tree_backed, adjacent_list);
 criterion_main!(benches);
@@ -29,9 +18,15 @@ fn cases<G>(c: &mut Criterion, prefix: &str)
 where
     G: GrowableGraph + QueryableGraph + EdgeShrinkableGraph + VertexShrinkableGraph + Clone,
 {
-    let vertex_size = *VERTEX_SIZE;
+    let vertex_size: usize = std::env::var("VERTEX_SIZE")
+        .unwrap()
+        .parse()
+        .unwrap_or(10000);
     println!("VERTEX_SIZE: {}", vertex_size);
-    let edge_size = *EDGE_SIZE;
+    let edge_size: usize = std::env::var("EDGE_SIZE")
+        .unwrap()
+        .parse()
+        .unwrap_or(100000);
     println!("EDGE_SIZE: {}", edge_size);
     c.bench_function(&(prefix.to_string() + "/add_vertex"), |b| {
         b.iter(|| add_vertices::<G>(vertex_size))
@@ -47,9 +42,10 @@ where
         let vid = g.add_vertex();
         vertices.push(vid);
     }
+    let rng = &mut rand::rng();
     for _ in 0..edge_size {
-        let v0 = vertices[rand::thread_rng().gen::<usize>() % vertices.len()];
-        let v1 = vertices[rand::thread_rng().gen::<usize>() % vertices.len()];
+        let v0 = *vertices.choose(rng).unwrap();
+        let v1 = *vertices.choose(rng).unwrap();
         let eid = g.add_edge(v0, v1);
         edges.push(eid);
     }
@@ -95,9 +91,10 @@ where
         let vid = g.add_vertex();
         vertices.push(vid);
     }
+    let rng = &mut rand::rng();
     for _ in 0..edge_size {
-        let v0 = vertices[rand::thread_rng().gen::<usize>() % vertices.len()];
-        let v1 = vertices[rand::thread_rng().gen::<usize>() % vertices.len()];
+        let v0 = *vertices.choose(rng).unwrap();
+        let v1 = *vertices.choose(rng).unwrap();
         let _ = g.add_edge(v0, v1);
     }
 }
@@ -106,7 +103,7 @@ fn contains_vertex<G>(g: &G, vertices: &[VertexId])
 where
     G: QueryableGraph,
 {
-    let vid = vertices[rand::thread_rng().gen::<usize>() % vertices.len()];
+    let vid = *vertices.choose(&mut rand::rng()).unwrap();
     g.contains_vertex(&vid);
 }
 
@@ -114,7 +111,7 @@ fn contains_edge<G>(g: &G, edges: &[EdgeId])
 where
     G: QueryableGraph,
 {
-    let eid = edges[rand::thread_rng().gen::<usize>() % edges.len()];
+    let eid = *edges.choose(&mut rand::rng()).unwrap();
     g.contains_edge(&eid);
 }
 

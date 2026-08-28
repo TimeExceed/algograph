@@ -105,11 +105,7 @@ mod tests {
             let me = self.clone();
             let it = std::iter::successors(Some(l / 2), move |n| {
                 let nxt = (n + l) / 2 + 1;
-                if nxt >= l {
-                    None
-                } else {
-                    Some(nxt)
-                }
+                if nxt >= l { None } else { Some(nxt) }
             })
             .map(move |n| {
                 let mut res = me.clone();

@@ -1,9 +1,9 @@
 use crate::graph::*;
 use petgraph::{
+    Direction,
     graph::{EdgeIndex, NodeIndex},
     stable_graph::StableDiGraph,
     visit::EdgeRef,
-    Direction,
 };
 use std::collections::BTreeSet;
 

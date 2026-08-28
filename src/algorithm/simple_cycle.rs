@@ -128,13 +128,12 @@ where
                         }
                     }
                 }
-            } else if let Some(vert) = self.to_exhaust_vertices.pop() {
+            } else {
+                let vert = self.to_exhaust_vertices.pop()?;
                 if let std::collections::hash_map::Entry::Vacant(e) = self.come_from.entry(vert) {
                     e.insert(None);
                     self.extend_stack(vert);
                 }
-            } else {
-                return None;
             }
         }
     }

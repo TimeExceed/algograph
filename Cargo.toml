@@ -1,8 +1,8 @@
 [package]
 name = "algograph"
-version = "0.4.0"
-edition = "2021"
-rust-version = "1.56"
+version = "0.5.0"
+edition = "2024"
+rust-version = "1.98"
 license-file = "LICENSE"
 description = "A (both directed and undirected) graph and their algorithms implemented in Rust"
 repository = "https://github.com/TimeExceed/algograph"
@@ -14,18 +14,17 @@ keywords = ["graph"]
 rustdoc-args = [ "--html-in-header", "katex.html" ]
 
 [dependencies]
-ahash = "0.8.3"
-bimap = "0.6.2"
-keyed_priority_queue = "0.4.1"
-petgraph = "0.6.3"
+ahash = "0.8.12"
+bimap = "0.6.3"
+keyed_priority_queue = "0.4.2"
+petgraph = "0.8.3"
 
 [dev-dependencies]
-criterion = "0.4.0"
+criterion = "0.8.2"
 quickcheck_macros = "1"
 quickcheck = "1"
-rand = "0.8.5"
-rs_quickcheck_util = "0.1"
-static_init = "1.0.3"
+rand = "0.10.2"
+rs_quickcheck_util = "0.2.0"
 
 [[bench]]
 name = "low_level_digraph_impls"
