@@ -206,7 +206,7 @@ impl QueryableGraph for TreeBackedGraph {
 
 #[cfg(test)]
 mod tests {
-    use crate::graph::{directed::*, MappedGraph};
+    use crate::graph::{MappedGraph, directed::*};
     use quickcheck_macros::*;
 
     #[quickcheck]
