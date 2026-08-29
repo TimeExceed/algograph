@@ -1,6 +1,6 @@
 [package]
 name = "algograph"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2024"
 rust-version = "1.98"
 license-file = "LICENSE"
@@ -17,7 +17,9 @@ rustdoc-args = [ "--html-in-header", "katex.html" ]
 ahash = "0.8.12"
 bimap = "0.6.3"
 keyed_priority_queue = "0.4.2"
+num-traits = "0.2.19"
 petgraph = "0.8.3"
+pinned-deque = "0.2.1"
 
 [dev-dependencies]
 criterion = "0.8.2"
