@@ -8,7 +8,7 @@ use std::ops::{Add, AddAssign, Mul, Neg, Sub, SubAssign};
 
 /// A tagged edge carrying a capacity and a cost per unit of flow,
 /// suitable for min-cost max-flow algorithms.
-pub trait FlowEdge: tagged::Edge {
+pub trait FlowEdge: tagged::Edge + Sized {
     type Capacity: Ord
         + Add<Output = Self::Capacity>
         + AddAssign
@@ -19,8 +19,10 @@ pub trait FlowEdge: tagged::Edge {
         + Copy
         + Clone;
     type Cost: Ord
-        + Add<Output = Self::Capacity>
+        + Add<Output = Self::Cost>
         + AddAssign
+        + Sub<Output = Self::Cost>
+        + SubAssign
         + Neg<Output = Self::Cost>
         + Zero
         + Mul<Self::Capacity, Output = Self::Cost>
